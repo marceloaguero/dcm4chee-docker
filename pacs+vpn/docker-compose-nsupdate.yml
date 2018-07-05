@@ -1,0 +1,13 @@
+version: "3"
+services:
+  nsupdate:
+    image: marceloaguero/nsupdate
+    networks:
+      - vpn
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+  vpn:
+    external: true

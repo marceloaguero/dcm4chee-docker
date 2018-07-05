@@ -1,0 +1,22 @@
+#!/bin/sh
+PROXY="arc"
+PROXY2="viewer"
+SERVER="ns0.winnet.com.ar"
+ZONE="cvzingenieria.com"
+HOST="pacs.clinica"
+HOST2="viewer.clinica"
+IP=$(getent hosts $PROXY | awk '{print $1}')
+IP2=$(getent hosts $PROXY2 | awk '{print $1}')
+KEY="/config/Kcvzingenieria.com.+157+26690.key"
+TMPFILE="/tmp/nsupdate"
+
+echo "server $SERVER" > $TMPFILE
+echo "debug yes" >> $TMPFILE
+echo "zone $ZONE." >> $TMPFILE
+echo "update delete $HOST.$ZONE" >> $TMPFILE
+echo "update add $HOST.$ZONE 60 A $IP" >> $TMPFILE
+echo "update delete $HOST2.$ZONE" >> $TMPFILE
+echo "update add $HOST2.$ZONE 60 A $IP2" >> $TMPFILE
+echo "send" >> $TMPFILE
+
+nsupdate -k $KEY -v $TMPFILE

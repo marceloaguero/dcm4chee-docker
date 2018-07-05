@@ -1,0 +1,22 @@
+version: "2"
+
+services:
+
+  openvpn:
+    image: kylemanna/openvpn:latest
+    ports:
+      - "1194:1194/udp"
+    volumes:
+      - /var/local/dcm4chee-arc/openvpn:/etc/openvpn
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - vpn
+      - proxy
+    restart: always
+
+networks:
+  vpn:
+    external: true
+  proxy:
+    external: true

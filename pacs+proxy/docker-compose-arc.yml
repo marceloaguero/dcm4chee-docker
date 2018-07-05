@@ -1,0 +1,111 @@
+version: "3"
+
+services:
+
+  ldap:
+    image: dcm4che/slapd-dcm4chee:2.4.44-13.2
+    env_file: docker-compose.env
+    volumes:
+      - /var/local/dcm4chee-arc/ldap:/var/lib/ldap
+      - /var/local/dcm4chee-arc/slapd.d:/etc/ldap/slapd.d
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - dcm4chee
+
+  db:
+    image: dcm4che/postgres-dcm4chee:10.0-13
+    env_file: docker-compose.env
+    volumes:
+      - /var/local/dcm4chee-arc/db:/var/lib/postgresql/data
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - dcm4chee
+
+  arc:
+    image: dcm4che/dcm4chee-arc-psql:5.13.2
+    env_file: docker-compose.env
+    environment:
+      WILDFLY_CHOWN: /opt/wildfly/standalone /storage
+      WILDFLY_WAIT_FOR: ldap:389 db:5432
+    depends_on:
+      - ldap
+      - db
+    volumes:
+      - /var/local/dcm4chee-arc/wildfly:/opt/wildfly/standalone
+      - /var/local/dcm4chee-arc/storage:/storage
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain.1=dcm4chee.localdomain
+        - com.df.servicePath.1=/
+        - com.df.port.1=8080
+        - com.df.srcPort.1=80
+        - com.df.reqMode.1=http
+        - com.df.serviceDomain.2=dcm4chee.localdomain
+        - com.df.servicePath.2=/
+        - com.df.port.2=8443
+        - com.df.srcPort.2=443
+        - com.df.reqMode.2=http
+        - com.df.serviceDomain.3=dcm4chee.localdomain
+        - com.df.servicePath.3=/
+        - com.df.port.3=9990
+        - com.df.srcPort.3=9990
+        - com.df.reqMode.3=http
+        - com.df.servicePath.4=/
+        - com.df.port.4=11112
+        - com.df.srcPort.4=11112
+        - com.df.reqMode.4=tcp
+        - com.df.servicePath.5=/
+        - com.df.port.5=2575
+        - com.df.srcPort.5=2575
+        - com.df.reqMode.5=tcp
+    networks:
+      - dcm4chee
+      - proxy
+
+  mongo:
+    image: mongo:3.6
+    volumes:
+      - /var/local/dcm4chee-arc/mongo:/data/db
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      - dcm4chee
+
+  viewer:
+    image: ohif/viewer:latest
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/ohif
+    depends_on:
+      - mongo
+      - arc
+    volumes:
+      - /var/local/dcm4chee-arc/ohif/app.json:/app/app.json
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain.1=viewer.dcm4chee.localdomain
+        - com.df.servicePath.1=/
+        - com.df.port.1=3000
+        - com.df.srcPort.1=80
+        - com.df.reqMode.1=http        
+    networks:
+      - dcm4chee
+      - proxy
+
+networks:
+  dcm4chee:
+    external: false
+  proxy:
+    external: true

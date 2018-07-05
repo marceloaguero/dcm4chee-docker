@@ -1,0 +1,83 @@
+version: "2"
+
+services:
+
+  ldap:
+    image: dcm4che/slapd-dcm4chee:2.4.44-13.2
+    env_file: docker-compose.env
+    volumes:
+      - /var/local/dcm4chee-arc/ldap:/var/lib/ldap
+      - /var/local/dcm4chee-arc/slapd.d:/etc/ldap/slapd.d
+    restart: always
+    networks:
+      - dcm4chee
+
+  db:
+    image: dcm4che/postgres-dcm4chee:10.0-13
+    env_file: docker-compose.env
+    volumes:
+      - /var/local/dcm4chee-arc/db:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - dcm4chee
+
+  arc:
+    image: dcm4che/dcm4chee-arc-psql:5.13.2
+    env_file: docker-compose.env
+    environment:
+      WILDFLY_CHOWN: /opt/wildfly/standalone /storage
+      WILDFLY_WAIT_FOR: ldap:389 db:5432
+    depends_on:
+      - ldap
+      - db
+    volumes:
+      - /var/local/dcm4chee-arc/wildfly:/opt/wildfly/standalone
+      - /var/local/dcm4chee-arc/storage:/storage
+    restart: always
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "9990:9990"
+      - "11112:11112"
+      - "2575:2575"
+    networks:
+      - dcm4chee
+      - proxy
+      - vpn
+    cap_add:
+      - NET_ADMIN
+
+  mongo:
+    image: mongo:3.6
+    volumes:
+      - /var/local/dcm4chee-arc/mongo:/data/db
+    restart: always
+    networks:
+      - dcm4chee
+
+  viewer:
+    image: ohif/viewer:latest
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/ohif
+    depends_on:
+      - mongo
+      - arc
+    volumes:
+      - /var/local/dcm4chee-arc/ohif/app.json:/app/app.json
+    restart: always
+    ports:
+      - "80:3000"
+    networks:
+      - dcm4chee
+      - proxy
+      - vpn
+    cap_add:
+      - NET_ADMIN
+
+networks:
+  dcm4chee:
+    external: false
+  proxy:
+    external: true
+  vpn:
+    external: true
