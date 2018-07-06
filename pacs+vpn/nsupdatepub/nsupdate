@@ -1,0 +1,16 @@
+#!/bin/sh
+SERVER="ns0.winnet.com.ar"
+ZONE="cvzingenieria.com"
+HOST="vpn.clinica"
+IP=$(curl -s http://whatismyip.akamai.com/)
+KEY="/config/Kcvzingenieria.com.+157+26690.key"
+TMPFILE="/tmp/nsupdate"
+
+echo "server $SERVER" > $TMPFILE
+echo "debug yes" >> $TMPFILE
+echo "zone $ZONE." >> $TMPFILE
+echo "update delete $HOST.$ZONE" >> $TMPFILE
+echo "update add $HOST.$ZONE 60 A $IP" >> $TMPFILE
+echo "send" >> $TMPFILE
+
+nsupdate -k $KEY -v $TMPFILE

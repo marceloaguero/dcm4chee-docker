@@ -1,0 +1,13 @@
+version: "3"
+services:
+  nsupdate:
+    image: marceloaguero/nsupdatepub
+    networks:
+      - proxy
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+  proxy:
+    external: true
