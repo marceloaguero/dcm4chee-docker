@@ -3,7 +3,7 @@ version: "3"
 services:
 
   ldap:
-    image: dcm4che/slapd-dcm4chee:2.4.44-13.2
+    image: dcm4che/slapd-dcm4chee:2.4.44-13.3
     env_file: docker-compose.env
     volumes:
       - /var/local/dcm4chee-arc/ldap:/var/lib/ldap
@@ -15,7 +15,7 @@ services:
       - dcm4chee
 
   keycloak:
-    image: dcm4che/keycloak:3.4.3-13.1
+    image: dcm4che/keycloak:4.0.0-13.3
     env_file: docker-compose.env
     environment:
       HTTP_PORT: 8880
@@ -61,7 +61,7 @@ services:
       - dcm4chee
 
   arc:
-    image: dcm4che/dcm4chee-arc-psql:5.13.2-secure-ui
+    image: dcm4che/dcm4chee-arc-psql:5.13.3-secure-ui
     env_file: docker-compose.env
     environment:
       WILDFLY_CHOWN: /opt/wildfly/standalone /storage
