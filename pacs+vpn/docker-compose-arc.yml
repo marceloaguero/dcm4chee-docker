@@ -3,7 +3,7 @@ version: "2"
 services:
 
   ldap:
-    image: dcm4che/slapd-dcm4chee:2.4.44-13.3
+    image: dcm4che/slapd-dcm4chee:${SLAPD_VERSION:-2.4.44-13.3}
     env_file: docker-compose.env
     volumes:
       - /var/local/dcm4chee-arc/ldap:/var/lib/ldap
@@ -13,7 +13,7 @@ services:
       - dcm4chee
 
   db:
-    image: dcm4che/postgres-dcm4chee:10.0-13
+    image: dcm4che/postgres-dcm4chee:${POSTGRES_VERSION:-10.0-13}
     env_file: docker-compose.env
     volumes:
       - /var/local/dcm4chee-arc/db:/var/lib/postgresql/data
@@ -22,7 +22,7 @@ services:
       - dcm4chee
 
   arc:
-    image: dcm4che/dcm4chee-arc-psql:5.13.3
+    image: dcm4che/dcm4chee-arc-psql:${ARC_VERSION:-5.13.3}
     env_file: docker-compose.env
     environment:
       WILDFLY_CHOWN: /opt/wildfly/standalone /storage
@@ -48,7 +48,7 @@ services:
       - NET_ADMIN
 
   mongo:
-    image: mongo:3.6
+    image: mongo:${MONGO_VERSION:-3.6}
     volumes:
       - /var/local/dcm4chee-arc/mongo:/data/db
     restart: always
@@ -56,7 +56,7 @@ services:
       - dcm4chee
 
   viewer:
-    image: ohif/viewer:latest
+    image: ohif/viewer:${VIEWER_VERSION:-latest}
     environment:
       - MONGO_URL=mongodb://mongo:27017/ohif
     depends_on:
