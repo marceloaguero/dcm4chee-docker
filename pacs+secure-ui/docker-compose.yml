@@ -1,0 +1,108 @@
+version: "3"
+
+services:
+
+  ldap:
+    image: dcm4che/slapd-dcm4chee:2.4.44-14.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+    env_file: docker-compose.env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - dcm4chee-arc-ldap:/var/lib/ldap
+      - dcm4chee-arc-slapd:/etc/ldap/slapd.d
+
+  keycloak:
+    image: dcm4che/keycloak:4.3.0-14.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+    ports:
+      - "8880:8880"
+      - "8843:8843"
+      - "8990:8990"
+    env_file: docker-compose.env
+    environment:
+      HTTP_PORT: 8880
+      HTTPS_PORT: 8843
+      MANAGEMENT_HTTP_PORT: 8990
+      KEYCLOAK_WAIT_FOR: ldap:389
+    depends_on:
+      - ldap
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - dcm4chee-arc-keycloak:/opt/keycloak/standalone
+
+  db:
+    image: dcm4che/postgres-dcm4chee:10.4-14
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+    env_file: docker-compose.env
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - dcm4chee-arc-db:/var/lib/postgresql/data
+
+  arc:
+    image: dcm4che/dcm4chee-arc-psql:5.14.0-secure
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "9990:9990"
+      - "11112:11112"
+      - "2575:2575"
+    env_file: docker-compose.env
+    environment:
+      WILDFLY_CHOWN: /opt/wildfly/standalone /storage
+      WILDFLY_WAIT_FOR: ldap:389 db:5432
+    depends_on:
+      - ldap
+      - keycloak
+      - db
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - dcm4chee-arc-wildfly:/opt/wildfly/standalone
+      - dcm4chee-arc-storage:/storage
+
+  mongo:
+    image: mongo:3.6
+    volumes:
+      - dcm4chee-arc-mongo:/data/db
+
+  viewer:
+    image: ohif/viewer:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://mongo:27017/ohif
+    depends_on:
+      - mongo
+      - arc
+    volumes:
+      - dcm4chee-arc-ohif:/app
+
+volumes:
+  dcm4chee-arc-ldap:
+    external: true
+  dcm4chee-arc-slapd:
+    external: true
+  dcm4chee-arc-keycloak:
+    external: true
+  dcm4chee-arc-db:
+    external: true
+  dcm4chee-arc-wildfly:
+    external: true
+  dcm4chee-arc-storage:
+    external: true
+  dcm4chee-arc-mongo:
+    external: true
+  dcm4chee-arc-ohif:
+    external: true
